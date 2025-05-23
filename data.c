@@ -24,19 +24,49 @@ typedef struct partie_ {
     int nb_obj;              // Nombre d'objectifs possédés
     CardColor cardToPick[5]; // Cartes visibles à piocher (utilise l'enum CardColor)
     int wagons, wagons_opp;  // Nombre de wagons restants pour le joueur et l'adversaire
+    int nbTracks_tot, nbTracks_me, nbTracks_opp;
     int state;               // État actuel du jeu (peut correspondre à Mresult.state)
 } partie;
 
-void initPartie(partie MyBot, GameData Gdata){
-    MyBot.player = 0;
-    MyBot.nb_obj = 0;
-    MyBot.wagons = 45;
-    MyBot.wagons_opp = 45;
+void initPartie(partie* MyBot, GameData Gdata){
+    MyBot->player = 0;
+    MyBot->nb_obj = 0;
+    MyBot->wagons = 45;
+    MyBot->wagons_opp = 45;
+    MyBot->nbTracks_tot = Gdata.nbTracks;
+    MyBot->nbTracks_me = 0;
+    MyBot->nbTracks_opp = 0;
     for (int i=0; i < 10; i++){
-        MyBot.cardByColor[i] = 0;
+        MyBot->cardByColor[i] = 0;
     }
     for (int i=0; i < 4; i++){
-        MyBot.cardByColor[Gdata.cards[i]] += 1;
+        MyBot->cardByColor[Gdata.cards[i]] += 1;
     }
 
+}
+
+void majRoutesDispos(partie* MyBot, route routes[50], route routes_dispos[50]) {
+    for (int i = 0; i < MyBot->nbTracks_tot; i++) {
+        if (routes_dispos[i].owner != -1) {
+            continue; // route déjà prise, on ne fait rien
+        }
+
+        // Vérifie si elle est dans les routes de l’adversaire
+        for (int j = 0; j < MyBot->nbTracks_opp; j++) {
+            if ((routes[j].city1 == routes_dispos[i].city1 && routes[j].city2 == routes_dispos[i].city2) ||
+                (routes[j].city1 == routes_dispos[i].city2 && routes[j].city2 == routes_dispos[i].city1)) {
+                routes_dispos[i].owner = 1;
+                break;
+            }
+        }
+
+        // Vérifie si elle est dans les routes du bot
+        for (int j = 0; j < MyBot->nbTracks_me; j++) {
+            if ((routes[j].city1 == routes_dispos[i].city1 && routes[j].city2 == routes_dispos[i].city2) ||
+                (routes[j].city1 == routes_dispos[i].city2 && routes[j].city2 == routes_dispos[i].city1)) {
+                routes_dispos[i].owner = 0;
+                break;
+            }
+        }
+    }
 }

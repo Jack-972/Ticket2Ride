@@ -25,9 +25,12 @@ typedef struct partie_ {
     int nb_obj;
     CardColor cardToPick[5];
     int wagons, wagons_opp;
+    int nbTracks_tot, nbTracks_me, nbTracks_opp;
     int state;
 } partie;
 
-void initPartie(partie MyBot, GameData Gdata);
+void initPartie(partie* MyBot, GameData Gdata);
+void majRoutesDispos(partie* MyBot, route routes[50], route routes_dispos[50]);
+
 
 #endif

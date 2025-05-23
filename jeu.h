@@ -4,6 +4,6 @@
 #include "../tickettorideapi/ticketToRide.h"
 
 void startObj();
-void playTurn();
+void playTurn(MoveResult Mresult, MoveData Mdata);
 
 #endif
