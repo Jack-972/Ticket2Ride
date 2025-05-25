@@ -70,7 +70,7 @@ int main(){
         printBoard();
         cardOnTheBoard(&board);     // Afficher les cartes disponibles
         // playTurn(Mresult, Mdata);                 // Laisser le joueur jouer
-        playBotTurn(&Mresult, &Mdata, &Gdata, &MyBot, routes);
+        playBotTurn(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
         getMove(&Mdata, &Mresult);  // Attendre le coup de l'adversaire
         if (Mresult.replay == 1){
             getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue

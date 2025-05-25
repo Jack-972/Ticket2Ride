@@ -51,15 +51,15 @@ void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot) {
 }
 
 
-void initRoutesFromTrackData(GameData Gdata, route routes[50]) {
+void initRoutesFromTrackData(GameData Gdata, route routes_dispos[50]) {
     for (int i = 0; i < Gdata.nbTracks; i++) {
         int idx = i * 5;
-        routes[i].city1 = Gdata.trackData[idx + 0];
-        routes[i].city2 = Gdata.trackData[idx + 1];
-        routes[i].length = Gdata.trackData[idx + 2];
-        routes[i].color1 = Gdata.trackData[idx + 3];
-        routes[i].color2 = Gdata.trackData[idx + 4];
-        routes[i].owner = -1;
+        routes_dispos[i].city1 = Gdata.trackData[idx + 0];
+        routes_dispos[i].city2 = Gdata.trackData[idx + 1];
+        routes_dispos[i].length = Gdata.trackData[idx + 2];
+        routes_dispos[i].color1 = Gdata.trackData[idx + 3];
+        routes_dispos[i].color2 = Gdata.trackData[idx + 4];
+        routes_dispos[i].owner = -1;
     }
 }
 
@@ -86,10 +86,10 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
         int length = routes[i].length;
 
         int cards_in_color = MyBot->cardByColor[color];
-        if (color == NONE){
+        if (color == LOCOMOTIVE){
             cards_in_color = 0;
             for (int j=1; j <= 8; j++){
-                if (MyBot->cardByColor[j] >= length){
+                if (MyBot->cardByColor[j] >= length - MyBot->cardByColor[LOCOMOTIVE]){
                     color = j;
                     cards_in_color = MyBot->cardByColor[j];
                     break;
@@ -115,17 +115,11 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
 
         // MAJ état du jeu local
         routes[i].owner = 0;
+        MyBot->nbTracks_me ++;
+        MyBot->nbTracks_tot --;
         MyBot->wagons -= length;
         MyBot->cardByColor[color] -= (length - Mdata->claimRoute.nbLocomotives);
         MyBot->cardByColor[LOCOMOTIVE] -= Mdata->claimRoute.nbLocomotives;
-
-        // Ajoute la route dans ton tableau de routes jouées
-        routes[MyBot->nbTracks_me].city1 = from;
-        routes[MyBot->nbTracks_me].city2 = to;
-        routes[MyBot->nbTracks_me].color1 = color;
-        routes[MyBot->nbTracks_me].owner = 0;
-        MyBot->nbTracks_me ++;
-        MyBot->nbTracks_tot --;
 
 
         claimed = 1;
