@@ -20,7 +20,7 @@ int main(){
     DEBUG_LEVEL = MESSAGE;
     int connect = connectToCGS("82.29.170.160", 15001, "BOT1");
 
-    sendGameSettings("TRAINING NICE_BOT timeout=1000 map=small", &Gdata);
+    sendGameSettings("TRAINING NICE_BOT timeout=1000", &Gdata);
     
     printf("Connect : %d\n", connect);
     printf("Game name : %s\n", Gdata.gameName);
@@ -60,7 +60,6 @@ int main(){
             routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
             routes[MyBot.nbTracks_opp].owner = 1;
             MyBot.nbTracks_opp ++;
-            MyBot.nbTracks_tot --;
         }
     }
 
@@ -81,7 +80,6 @@ int main(){
             routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
             routes[MyBot.nbTracks_opp].owner = 1;
             MyBot.nbTracks_opp ++;
-            MyBot.nbTracks_tot --;
         }
     }
     quitGame();

@@ -116,7 +116,6 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
         // MAJ état du jeu local
         routes[i].owner = 0;
         MyBot->nbTracks_me ++;
-        MyBot->nbTracks_tot --;
         MyBot->wagons -= length;
         MyBot->cardByColor[color] -= (length - Mdata->claimRoute.nbLocomotives);
         MyBot->cardByColor[LOCOMOTIVE] -= Mdata->claimRoute.nbLocomotives;
