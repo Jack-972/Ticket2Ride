@@ -15,8 +15,8 @@ int main(){
     MoveData Mdata;
     MoveResult Mresult;
     partie MyBot;
-    route routes[50];
-    route routes_dispos[50];
+    route routes[80];
+    route routes_dispos[80];
     DEBUG_LEVEL = MESSAGE;
     int connect = connectToCGS("82.29.170.160", 15001, "BOT1");
 

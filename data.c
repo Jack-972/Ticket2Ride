@@ -15,6 +15,7 @@ typedef struct obj_ {
     unsigned int city1;      // Ville de départ de l'objectif (correspond à 'from' dans Objective)
     unsigned int city2;      // Ville d'arrivée de l'objectif (correspond à 'to')
     unsigned int score;      // Score associé à l'objectif
+    int done;
 } obj;
 
 typedef struct partie_ {
@@ -42,10 +43,13 @@ void initPartie(partie* MyBot, GameData Gdata){
     for (int i=0; i < 4; i++){
         MyBot->cardByColor[Gdata.cards[i]] += 1;
     }
+    for (int i=0; i < 10; i++){
+        MyBot->tab_obj[i].done = 0;
+    }
 
 }
 
-void majRoutesDispos(partie* MyBot, route routes[50], route routes_dispos[50]) {
+void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]) {
     for (int i = 0; i < MyBot->nbTracks_tot; i++) {
         if (routes_dispos[i].owner != -1) {
             continue; // route déjà prise, on ne fait rien

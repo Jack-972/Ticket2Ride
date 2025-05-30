@@ -16,6 +16,7 @@ typedef struct obj_ {
     unsigned int city1;
     unsigned int city2;
     unsigned int score;
+    int done;
 } obj;
 
 typedef struct partie_ {
@@ -30,7 +31,7 @@ typedef struct partie_ {
 } partie;
 
 void initPartie(partie* MyBot, GameData Gdata);
-void majRoutesDispos(partie* MyBot, route routes[50], route routes_dispos[50]);
+void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]);
 
 
 #endif
