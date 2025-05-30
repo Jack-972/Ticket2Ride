@@ -133,7 +133,7 @@ void afficherChemin(int src, int dest, int Prec[36]) {
     }
 }
 
-
+// Ancienne version qui ne suit pas les objectifs
 /*
 void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBot, route routes[80]) {
     int claimed = 0;
@@ -278,6 +278,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
         return;
     }
 
+    int couleurs_utiles[10] = {0};
     int src;
     int dest;
     for (int i=0; i<MyBot->nb_obj; i++){
@@ -299,7 +300,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
             if (v == -1) {
                 printf("Pas de chemin dispo\n");
             } else {
-                chemin[len++] = src;
+                chemin[len++] = src; 
 
                 for (int i = len - 1; i > 0; i--) {
                     unsigned int c1 = chemin[i];
@@ -316,6 +317,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             int color_cards = MyBot->cardByColor[color];
 
                             if (color == LOCOMOTIVE) {
+                                color_cards = 0;
                                 for (int k = 1; k <= 8; k++) {
                                     if (MyBot->cardByColor[k] + locomotives >= needed) {
                                         color = k;
@@ -324,6 +326,8 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                                     }
                                 }
                             }
+                            if (color_cards == 0) continue;
+                            couleurs_utiles[color]++;
 
                             if (MyBot->wagons >= needed && (color_cards + locomotives >= needed)) {
                                 int nbLoco = (needed > color_cards) ? (needed - color_cards) : 0;
@@ -358,18 +362,19 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     getBoardState(&board);
     int picked = 0;
     for (int i = 0; i < 5 && picked < 2; i++) {
-        if (board.card[i] == LOCOMOTIVE && picked == 0) {
-            Mdata->action = DRAW_CARD;
-            Mdata->drawCard = LOCOMOTIVE;
-            sendMove(Mdata, Mresult);
-            MyBot->cardByColor[LOCOMOTIVE]++;
-            picked += 2;
-        } else if (board.card[i] != LOCOMOTIVE) {
+        if (couleurs_utiles[board.card[i]] > 0 && board.card[i] != LOCOMOTIVE) {
             Mdata->action = DRAW_CARD;
             Mdata->drawCard = board.card[i];
             sendMove(Mdata, Mresult);
             MyBot->cardByColor[board.card[i]]++;
             picked++;
+        }
+        else if (board.card[i] == LOCOMOTIVE && picked == 0) {
+            Mdata->action = DRAW_CARD;
+            Mdata->drawCard = LOCOMOTIVE;
+            sendMove(Mdata, Mresult);
+            MyBot->cardByColor[LOCOMOTIVE]++;
+            picked += 2;
         }
     }
     while (picked < 2) {
