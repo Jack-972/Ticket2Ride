@@ -28,23 +28,46 @@ void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot) {
     printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
     MyBot->nb_obj += 1;
 
-    if (minIndex == 1){
-        Mdata->chooseObjectives[1] = (minIndex == 2);
-        Mdata->chooseObjectives[2] = (minIndex == 1);
+    if (MyBot->wagons == 46){
+        Mdata->chooseObjectives[1] = 1;
+        MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[1].from;
+        MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[1].to;
+        MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[1].score;
+        printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
+        MyBot->nb_obj += 1;
+
+        Mdata->chooseObjectives[2] = 1;
         MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[2].from;
         MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[2].to;
         MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[2].score;
         printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
         MyBot->nb_obj += 1;
     }
+    else if (MyBot->wagons >= 12 && MyBot->wagons <= 45){
+
+
+        if (minIndex == 1){
+            Mdata->chooseObjectives[1] = (minIndex == 2);
+            Mdata->chooseObjectives[2] = (minIndex == 1);
+            MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[2].from;
+            MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[2].to;
+            MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[2].score;
+            printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
+            MyBot->nb_obj += 1;
+        }
+        else{
+            Mdata->chooseObjectives[1] = (minIndex == 2);
+            Mdata->chooseObjectives[2] = (minIndex == 1);
+            MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[1].from;
+            MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[1].to;
+            MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[1].score;
+            printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
+            MyBot->nb_obj += 1;
+        }
+    }
     else{
-        Mdata->chooseObjectives[1] = (minIndex == 2);
-        Mdata->chooseObjectives[2] = (minIndex == 1);
-        MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[1].from;
-        MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[1].to;
-        MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[1].score;
-        printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
-        MyBot->nb_obj += 1;
+        Mdata->chooseObjectives[1] = 0;
+        Mdata->chooseObjectives[2] = 0;
     }
 
     sendMove(Mdata, Mresult);
