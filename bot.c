@@ -43,7 +43,7 @@ void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot) {
         printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
         MyBot->nb_obj += 1;
     }
-    else if (MyBot->wagons >= 12 && MyBot->wagons <= 45){
+    else if (MyBot->wagons >= 14 && MyBot->wagons <= 45 && MyBot->wagons_opp > 20){
 
 
         if (minIndex == 1){
@@ -106,7 +106,7 @@ void nbWagons(route route[80], GameData* Gdata, int G[36][36]){
     }
 }
 
-void dijkstra(int src, route routes_dispos[80], GameData* Gdata, int D[36], int Prec[36]){
+void dijkstra(int src, route routes_dispos[80], GameData* Gdata, int D[36], int Prec[20]){
     int N = Gdata->nbCities;
     int visite[N];
     int G[N][N];
@@ -142,7 +142,7 @@ int distanceMini(int D[36], int visite[36], int N){
     return indice_min;
 }
 
-void afficherChemin(int src, int dest, int Prec[36]) {
+void afficherChemin(int src, int dest, int Prec[20]) {
     int v = dest;
     printf("Chemin de %d à %d : ", src, dest);
     while (v != src && v != -1) {
@@ -157,105 +157,112 @@ void afficherChemin(int src, int dest, int Prec[36]) {
 }
 
 // Ancienne version qui ne suit pas les objectifs
-/*
-void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBot, route routes[80]) {
-    int claimed = 0;
+
+void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBot, route routes[80]) {
+    MyBot->state = 0;
     printf("Etat des cartes : ");
     for (int i = 1; i <= 9; i++) {
         printf("%d:%d ", i, MyBot->cardByColor[i]);
     }
     printf(" | Wagons restants : %d\n", MyBot->wagons);
-    printf(" Nombre routes bots : %d\n", MyBot->nbTracks_opp);
-    printf(" Nombre routes dispos : %d\n", MyBot->nbTracks_tot);
 
+    int len_max = 0;
+    int i_max = -1;
+    int from_max = -1, to_max = -1, color_max = -1;
+    int cards_in_color_max = 0;
 
-    // On tente de poser une route sûre
     for (int i = 0; i < Gdata->nbTracks; i++) {
-        if (routes[i].owner != -1) continue;  // Déjà prise
+        if (routes[i].owner != -1) continue;
 
         int from = routes[i].city1;
         int to = routes[i].city2;
-        CardColor color = routes[i].color1;
-        
         int length = routes[i].length;
+        int locomotives = MyBot->cardByColor[LOCOMOTIVE];
 
+        // Choix de couleur : si LOCOMOTIVE, choisir une réelle
+        int color = routes[i].color1;
         int cards_in_color = MyBot->cardByColor[color];
-        if (color == LOCOMOTIVE){
+
+        if (color == LOCOMOTIVE) {
             cards_in_color = 0;
-            for (int j=1; j <= 8; j++){
-                if (MyBot->cardByColor[j] >= length - MyBot->cardByColor[LOCOMOTIVE]){
+            for (int j = 1; j <= 8; j++) {
+                if (MyBot->cardByColor[j] + locomotives >= length) {
                     color = j;
                     cards_in_color = MyBot->cardByColor[j];
                     break;
                 }
             }
-        } 
-        if (cards_in_color == 0) continue;  // aucune couleur suffisante trouvée
-       
-        int locomotives = MyBot->cardByColor[LOCOMOTIVE];
+        }
+
         int total = cards_in_color + locomotives;
 
-        if (MyBot->wagons < length) continue;
-        if (total < length) continue;
+        if (cards_in_color == 0 || total < length || MyBot->wagons < length) continue;
 
-        // C'est safe, on joue
+        if (length > len_max) {
+            len_max = length;
+            i_max = i;
+            from_max = from;
+            to_max = to;
+            color_max = color;
+            cards_in_color_max = cards_in_color;
+        }
+    }
+
+    if (i_max != -1) {
+        int nbLoco = (len_max > cards_in_color_max) ? (len_max - cards_in_color_max) : 0;
+
         Mdata->action = CLAIM_ROUTE;
-        Mdata->claimRoute.from = from;
-        Mdata->claimRoute.to = to;
-        Mdata->claimRoute.color = color;
-        Mdata->claimRoute.nbLocomotives = (locomotives >= (length - cards_in_color)) ? (length - cards_in_color) : locomotives;
+        Mdata->claimRoute.from = from_max;
+        Mdata->claimRoute.to = to_max;
+        Mdata->claimRoute.color = color_max;
+        Mdata->claimRoute.nbLocomotives = nbLoco;
 
         sendMove(Mdata, Mresult);
 
-        // MAJ état du jeu local
-        routes[i].owner = 0;
-        MyBot->nbTracks_me ++;
-        MyBot->wagons -= length;
-        MyBot->cardByColor[color] -= (length - Mdata->claimRoute.nbLocomotives);
-        MyBot->cardByColor[LOCOMOTIVE] -= Mdata->claimRoute.nbLocomotives;
+        routes[i_max].owner = 0;
+        MyBot->nbTracks_me++;
+        MyBot->wagons -= len_max;
+        MyBot->cardByColor[color_max] -= (len_max - nbLoco);
+        MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
 
-
-        claimed = 1;
-        printf("Tentative de claim route %d -> %d, couleur %d, longueur %d\n", from, to, color, length);
-        printf("Cartes couleur: %d, locomotives: %d, total: %d, wagons: %d\n", cards_in_color, locomotives, total, MyBot->wagons);
-
-        break;
+        printf("Claim: %d -> %d | color: %d | length: %d\n", from_max, to_max, color_max, len_max);
+        return;
     }
 
-    if (!claimed) {
-        // Sécurité : on pioche 2 cartes
-        BoardState board;
-        getBoardState(&board);
+    // Fallback : piocher
+    printf("Pas de claim possible, on pioche.\n");
+    BoardState board;
+    getBoardState(&board);
 
-        int picked = 0;
-        for (int i = 0; i < 5 && picked < 2; i++) {
-            if (board.card[i] == LOCOMOTIVE && picked == 0) {
-                Mdata->action = DRAW_CARD;
-                Mdata->drawCard = LOCOMOTIVE;
-                sendMove(Mdata, Mresult);
-                MyBot->cardByColor[LOCOMOTIVE]++;
-                picked += 2; // Fin du tour si on prend loco visible
-            }
-            else if (board.card[i] != LOCOMOTIVE) {
-                Mdata->action = DRAW_CARD;
-                Mdata->drawCard = board.card[i];
-                sendMove(Mdata, Mresult);
-                MyBot->cardByColor[board.card[i]]++;
-                picked++;
-            }
-        }
-
-        while (picked < 2) {
-            Mdata->action = DRAW_BLIND_CARD;
+    int picked = 0;
+    for (int i = 0; i < 5 && picked < 2; i++) {
+        if (board.card[i] == LOCOMOTIVE && picked == 0) {
+            Mdata->action = DRAW_CARD;
+            Mdata->drawCard = LOCOMOTIVE;
             sendMove(Mdata, Mresult);
-            MyBot->cardByColor[Mresult->card]++;
+            MyBot->cardByColor[LOCOMOTIVE]++;
+            picked += 2;
+        } else if (board.card[i] != LOCOMOTIVE) {
+            Mdata->action = DRAW_CARD;
+            Mdata->drawCard = board.card[i];
+            sendMove(Mdata, Mresult);
+            MyBot->cardByColor[board.card[i]]++;
             picked++;
         }
     }
-}
-*/
 
-int dfs(int src, int dest, int visite[], int nbCities, route routes[], int nbRoutes) {
+    while (picked < 2) {
+        Mdata->action = DRAW_BLIND_CARD;
+        sendMove(Mdata, Mresult);
+        MyBot->cardByColor[Mresult->card]++;
+        picked++;
+    }
+}
+
+
+// depth first search
+
+int dfs(int src, int dest, int visite[], int nbCities, route routes[], int nbRoutes) {  
     if (src == dest) return 1;
     visite[src] = 1;
 
@@ -297,7 +304,13 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     }
 
     if (obj_atteints == MyBot->nb_obj){
-        chooseObjectivesBot(Mresult, Mdata, MyBot);
+        if(MyBot->wagons_opp >= 15){
+            chooseObjectivesBot(Mresult, Mdata, MyBot);
+        }
+        else{
+            MyBot->state = 1;
+            return;
+        }
         return;
     }
 
@@ -350,7 +363,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                                 }
                             }
                             if (color_cards == 0) continue;
-                            couleurs_utiles[color]++;
+                            couleurs_utiles[color] = 2;
 
                             if (MyBot->wagons >= needed && (color_cards + locomotives >= needed)) {
                                 int nbLoco = (needed > color_cards) ? (needed - color_cards) : 0;
@@ -388,20 +401,23 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
         if (couleurs_utiles[board.card[i]] > 0 && board.card[i] != LOCOMOTIVE) {
             Mdata->action = DRAW_CARD;
             Mdata->drawCard = board.card[i];
+            printf("carte piochée : %d, numéro : %d\n", board.card[i], i);
             sendMove(Mdata, Mresult);
             MyBot->cardByColor[board.card[i]]++;
+            couleurs_utiles[board.card[i]]--;
             picked++;
         }
-        else if (board.card[i] == LOCOMOTIVE && picked == 0) {
-            Mdata->action = DRAW_CARD;
-            Mdata->drawCard = LOCOMOTIVE;
-            sendMove(Mdata, Mresult);
-            MyBot->cardByColor[LOCOMOTIVE]++;
-            picked += 2;
-        }
+        // else if (board.card[i] == LOCOMOTIVE && picked == 0) {
+        //     Mdata->action = DRAW_CARD;
+        //     Mdata->drawCard = LOCOMOTIVE;
+        //     sendMove(Mdata, Mresult);
+        //     MyBot->cardByColor[LOCOMOTIVE]++;
+        //     picked += 2;
+        // }
     }
     while (picked < 2) {
         Mdata->action = DRAW_BLIND_CARD;
+        printf("carte piochée : %d\n", Mresult->card);
         sendMove(Mdata, Mresult);
         MyBot->cardByColor[Mresult->card]++;
         picked++;

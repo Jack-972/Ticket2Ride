@@ -26,7 +26,7 @@ typedef struct partie_ {
     CardColor cardToPick[5]; // Cartes visibles à piocher (utilise l'enum CardColor)
     int wagons, wagons_opp;  // Nombre de wagons restants pour le joueur et l'adversaire
     int nbTracks_tot, nbTracks_me, nbTracks_opp;
-    int state;               // État actuel du jeu (peut correspondre à Mresult.state)
+    int state;               // État actuel du jeu 
 } partie;
 
 void initPartie(partie* MyBot, GameData Gdata){
@@ -37,6 +37,7 @@ void initPartie(partie* MyBot, GameData Gdata){
     MyBot->nbTracks_tot = Gdata.nbTracks;
     MyBot->nbTracks_me = 0;
     MyBot->nbTracks_opp = 0;
+    MyBot->state = 0;
     for (int i=0; i < 10; i++){
         MyBot->cardByColor[i] = 0;
     }
@@ -59,8 +60,11 @@ void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]) {
         for (int j = 0; j < MyBot->nbTracks_opp; j++) {
             if ((routes[j].city1 == routes_dispos[i].city1 && routes[j].city2 == routes_dispos[i].city2) ||
                 (routes[j].city1 == routes_dispos[i].city2 && routes[j].city2 == routes_dispos[i].city1)) {
-                routes_dispos[i].owner = 1;
-                break;
+                if (routes_dispos[i].owner != 1){
+                    routes_dispos[i].owner = 1;
+                    MyBot->wagons_opp -= routes_dispos[i].length;
+                    break;
+                }
             }
         }
 

@@ -18,9 +18,11 @@ int main(){
     route routes[80];
     route routes_dispos[80];
     DEBUG_LEVEL = MESSAGE;
-    int connect = connectToCGS("82.29.170.160", 15001, "BOT1");
+    int connect = connectToCGS("82.29.170.160", 15001, "Jack");
 
-    sendGameSettings("TRAINING NICE_BOT timeout=1000", &Gdata);
+    // sendGameSettings("", &Gdata);
+    sendGameSettings("TRAINING PLAY_RANDOM", &Gdata);
+
     
     printf("Connect : %d\n", connect);
     printf("Game name : %s\n", Gdata.gameName);
@@ -70,6 +72,9 @@ int main(){
         cardOnTheBoard(&board);     // Afficher les cartes disponibles
         // playTurn(Mresult, Mdata);                 // Laisser le joueur jouer
         playBotTurn(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
+        if (MyBot.state == 1){
+            claimer(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
+        }
         getMove(&Mdata, &Mresult);  // Attendre le coup de l'adversaire
         if (Mresult.replay == 1){
             getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
