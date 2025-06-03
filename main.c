@@ -18,76 +18,83 @@ int main(){
     route routes[80];
     route routes_dispos[80];
     DEBUG_LEVEL = MESSAGE;
-    int connect = connectToCGS("82.29.170.160", 15001, "Jack");
 
-    // sendGameSettings("", &Gdata);
-    sendGameSettings("TRAINING PLAY_RANDOM", &Gdata);
+    while (1){
 
-    
-    printf("Connect : %d\n", connect);
-    printf("Game name : %s\n", Gdata.gameName);
+        int connect = connectToCGS("82.29.170.160", 15001, "Jack2");
 
-    printBoard();
-    initPartie(&MyBot, Gdata);
-    initRoutesFromTrackData(Gdata, routes_dispos);
+        sendGameSettings("", &Gdata);
+        // sendGameSettings("TRAINING NICE_BOT", &Gdata);
 
-    if (Gdata.starter == 1){
-        getMove(&Mdata, &Mresult);
-        if (Mresult.replay == 1){
-            getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+        
+        printf("Connect : %d\n", connect);
+        printf("Game name : %s\n", Gdata.gameName);
+
+        printBoard();
+        initPartie(&MyBot, Gdata);
+        initRoutesFromTrackData(Gdata, routes_dispos);
+
+        if (Gdata.starter == 1){
+            getMove(&Mdata, &Mresult);
+            if (Mresult.replay == 1){
+                getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+            }
         }
-    }
 
-    getBoardState(&board);      // Récupérer l'état du plateau
-    printBoard();
-    cardOnTheBoard(&board);     // Afficher les cartes disponibles
-    // startObj();
-    chooseObjectivesBot(&Mresult, &Mdata, &MyBot);
-               
-    if (Gdata.starter == 0){
-        getMove(&Mdata, &Mresult);
-        if (Mresult.replay == 1){
-            getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
-        }
-    }
-
-    if (Gdata.starter == 1){
-        getMove(&Mdata, &Mresult);
-        if (Mresult.replay == 1){
-            getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
-        }
-        if (Mdata.action == CLAIM_ROUTE){
-            routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
-            routes[MyBot.nbTracks_opp].city2 = Mdata.claimRoute.to;
-            routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
-            routes[MyBot.nbTracks_opp].owner = 1;
-            MyBot.nbTracks_opp ++;
-        }
-    }
-
-    while (!((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))) {
-        majRoutesDispos(&MyBot, routes, routes_dispos);
         getBoardState(&board);      // Récupérer l'état du plateau
         printBoard();
         cardOnTheBoard(&board);     // Afficher les cartes disponibles
-        // playTurn(Mresult, Mdata);                 // Laisser le joueur jouer
-        playBotTurn(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
-        if (MyBot.state == 1){
-            claimer(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
+        // startObj();
+        chooseObjectivesBot(&Mresult, &Mdata, &MyBot);
+                
+        if (Gdata.starter == 0){
+            getMove(&Mdata, &Mresult);
+            if (Mresult.replay == 1){
+                getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+            }
         }
-        getMove(&Mdata, &Mresult);  // Attendre le coup de l'adversaire
-        if (Mresult.replay == 1){
-            getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+
+        if (Gdata.starter == 1){
+            getMove(&Mdata, &Mresult);
+            if (Mresult.replay == 1){
+                getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+            }
+            if (Mdata.action == CLAIM_ROUTE){
+                routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
+                routes[MyBot.nbTracks_opp].city2 = Mdata.claimRoute.to;
+                routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
+                routes[MyBot.nbTracks_opp].owner = 1;
+                MyBot.nbTracks_opp ++;
+            }
         }
-        if (Mdata.action == CLAIM_ROUTE){
-            routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
-            routes[MyBot.nbTracks_opp].city2 = Mdata.claimRoute.to;
-            routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
-            routes[MyBot.nbTracks_opp].owner = 1;
-            MyBot.nbTracks_opp ++;
+
+        while (!((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))) {
+            majRoutesDispos(&MyBot, routes, routes_dispos);
+            getBoardState(&board);      // Récupérer l'état du plateau
+            printBoard();
+            cardOnTheBoard(&board);     // Afficher les cartes disponibles
+            // playTurn(Mresult, Mdata);                 // Laisser le joueur jouer
+            playBotTurn(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
+            if (MyBot.state == 1){
+                claimer(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
+            }
+            if (!((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))){
+                getMove(&Mdata, &Mresult);  // Attendre le coup de l'adversaire
+                if (Mresult.replay == 1){
+                    getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+                }
+            }
+            if (Mdata.action == CLAIM_ROUTE){
+                routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
+                routes[MyBot.nbTracks_opp].city2 = Mdata.claimRoute.to;
+                routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
+                routes[MyBot.nbTracks_opp].owner = 1;
+                MyBot.nbTracks_opp ++;
+            }
         }
+        quitGame();
+
     }
-    quitGame();
 
 
     return 0;

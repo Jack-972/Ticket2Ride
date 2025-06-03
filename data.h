@@ -27,6 +27,7 @@ typedef struct partie_ {
     CardColor cardToPick[5];
     int wagons, wagons_opp;
     int nbTracks_tot, nbTracks_me, nbTracks_opp;
+    int nbCards;
     int state;
 } partie;
 

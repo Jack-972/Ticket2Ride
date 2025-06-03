@@ -26,6 +26,7 @@ typedef struct partie_ {
     CardColor cardToPick[5]; // Cartes visibles à piocher (utilise l'enum CardColor)
     int wagons, wagons_opp;  // Nombre de wagons restants pour le joueur et l'adversaire
     int nbTracks_tot, nbTracks_me, nbTracks_opp;
+    int nbCards;
     int state;               // État actuel du jeu 
 } partie;
 
@@ -38,6 +39,7 @@ void initPartie(partie* MyBot, GameData Gdata){
     MyBot->nbTracks_me = 0;
     MyBot->nbTracks_opp = 0;
     MyBot->state = 0;
+    MyBot->nbCards = 4;
     for (int i=0; i < 10; i++){
         MyBot->cardByColor[i] = 0;
     }
