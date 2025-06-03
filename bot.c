@@ -9,77 +9,154 @@
 
 extern int DEBUG_LEVEL;
 
-/*
-void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot) {
+
+void chooseObjectivesBot2(MoveResult* Mresult, MoveData* Mdata, partie* MyBot, GameData* Gdata, route routes[80]){
 
     Mdata->action = DRAW_OBJECTIVES;  // Piocher des objectifs
     sendMove(Mdata, Mresult);
     Mdata->action = CHOOSE_OBJECTIVES;
 
-    // On garde au moins le 1er, et le plus long des 2 autres
-    int minIndex = 1;
-    if (Mresult->objectives[2].score < Mresult->objectives[1].score) {
-        minIndex = 2;
+    int D[36], Prec[36];
+    int src;
+    int dest;
+    obj objs[3];
+
+    for (int i = 0; i < 3; i++) {
+        objs[i].index = i;
+        objs[i].score = Mresult->objectives[i].score;
+        objs[i].city1 = Mresult->objectives[i].from;
+        objs[i].city2 = Mresult->objectives[i].to;
+        objs[i].done = 0;
+        objs[i].length = 0;
     }
 
-    Mdata->chooseObjectives[0] = 1;
-    MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[0].from;
-    MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[0].to;
-    MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[0].score;
-    printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
-    MyBot->nb_obj += 1;
+    for (int k=0; k<3; k++){
+        
+        src = objs[k].city1;
+        dest = objs[k].city2;
 
-    if (MyBot->wagons == 45){  // en début de partie, prendre le 1er objectif et le plus long objectif entre le 2 et 3
+        dijkstra(src, routes, Gdata, D, Prec);
+        afficherChemin(src, dest, Prec);
 
-        if (minIndex == 1){
-            Mdata->chooseObjectives[1] = (minIndex == 2);
-            Mdata->chooseObjectives[2] = (minIndex == 1);
-            MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[2].from;
-            MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[2].to;
-            MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[2].score;
-            printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
-            MyBot->nb_obj += 1;
+        // Parcours du chemin
+        int chemin[20];
+        int len = 0;
+        int v = dest;
+        while (v != src && v != -1) {
+            chemin[len++] = v;
+            v = Prec[v];
+        }
+        if (v == -1) {
+            printf("Pas de chemin dispo\n");
+        }
+        else {
+            chemin[len++] = src; 
+
+            for (int i = len - 1; i > 0; i--) {
+                unsigned int c1 = chemin[i];
+                unsigned int c2 = chemin[i - 1];
+
+                for (int j = 0; j < Gdata->nbTracks; j++) {
+                    route r = routes[j];
+
+                    if ((r.city1 == c1 && r.city2 == c2) || (r.city1 == c2 && r.city2 == c1)) {
+                        if (r.owner != 0){
+                            int length = r.length;
+                            objs[k].length += length;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Initialisation des choix
+    for (int i = 0; i < 3; i++) {
+        Mdata->chooseObjectives[i] = 0;
+    }
+
+    if (MyBot->wagons == 45) {
+        // Début : 2 plus gros scores
+        if (objs[0].score > objs[1].score){
+            Mdata->chooseObjectives[objs[0].index] = 1;
+
+            if (objs[1].score > objs[2].score){
+                Mdata->chooseObjectives[objs[1].index] = 1;
+            }
+            else{
+                Mdata->chooseObjectives[objs[2].index] = 1;
+            }
         }
         else{
-            Mdata->chooseObjectives[1] = (minIndex == 2);
-            Mdata->chooseObjectives[2] = (minIndex == 1);
-            MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[1].from;
-            MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[1].to;
-            MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[1].score;
-            printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
-            MyBot->nb_obj += 1;
+            Mdata->chooseObjectives[objs[1].index] = 1;
+            if (objs[0].score > objs[2].score){
+                Mdata->chooseObjectives[objs[0].index] = 1;
+            }
+            else{
+                Mdata->chooseObjectives[objs[2].index] = 1;
+            }
         }
-    }
-    else if (MyBot->wagons >= 14 && MyBot->wagons <= 45 && MyBot->wagons_opp > 20){  // en milieu de partie, prendre le 1er objectif et le plus court objectif entre le 2 et 3
 
-
-        if (minIndex == 1){
-            Mdata->chooseObjectives[1] = (minIndex == 1);
-            Mdata->chooseObjectives[2] = (minIndex == 2);
-            MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[1].from;
-            MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[1].to;
-            MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[1].score;
-            printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
-            MyBot->nb_obj += 1;
+    } else if (MyBot->wagons >= 14 && MyBot->wagons <= 45 && MyBot->wagons_opp > 18) {
+        // Milieu : 2 plus petits
+        if (objs[0].length > objs[1].length){
+            Mdata->chooseObjectives[objs[1].index] = 1;
+            
+            if (objs[0].length > objs[2].length){
+                Mdata->chooseObjectives[objs[2].index] = 1;
+            }
+            else{
+                Mdata->chooseObjectives[objs[0].index] = 1;
+            }
         }
         else{
-            Mdata->chooseObjectives[1] = (minIndex == 1);
-            Mdata->chooseObjectives[2] = (minIndex == 2);
-            MyBot->tab_obj[MyBot->nb_obj].city1 = Mresult->objectives[2].from;
-            MyBot->tab_obj[MyBot->nb_obj].city2 = Mresult->objectives[2].to;
-            MyBot->tab_obj[MyBot->nb_obj].score = Mresult->objectives[2].score;
-            printf("city1 : %d, city2 : %d, score : %d\n", MyBot->tab_obj[MyBot->nb_obj].city1, MyBot->tab_obj[MyBot->nb_obj].city2,MyBot->tab_obj[MyBot->nb_obj].score);
-            MyBot->nb_obj += 1;
+            Mdata->chooseObjectives[objs[0].index] = 1;
+
+            if (objs[1].length > objs[2].length){
+                Mdata->chooseObjectives[objs[2].index] = 1;
+            }
+            else{
+                Mdata->chooseObjectives[objs[1].index] = 1;
+            }
+        }
+    } else {
+        // Fin : 1 plus petit
+        if (objs[0].length > objs[1].length){
+
+            if (objs[2].length > objs[1].length){
+                Mdata->chooseObjectives[objs[1].index] = 1;
+            }
+            else{
+                Mdata->chooseObjectives[objs[2].index] = 1;
+            }
+        }
+        else{
+            
+            if (objs[0].length > objs[2].length){
+                Mdata->chooseObjectives[objs[2].index] = 1;
+            }
+            else{
+                Mdata->chooseObjectives[objs[0].index] = 1;
+            }
         }
     }
-    else{
-        Mdata->chooseObjectives[1] = 0;
-        Mdata->chooseObjectives[2] = 0;
+
+    // Ajouter les objectifs sélectionnés à la partie
+    for (int i = 0; i < 3; i++) {
+        if (Mdata->chooseObjectives[i]) {
+            MyBot->tab_obj[MyBot->nb_obj] = objs[i];
+            printf("Objectif gardé : city1 = %d, city2 = %d, score = %d\n",
+                   MyBot->tab_obj[MyBot->nb_obj].city1,
+                   MyBot->tab_obj[MyBot->nb_obj].city2,
+                   MyBot->tab_obj[MyBot->nb_obj].score);
+            MyBot->nb_obj++;
+        }
     }
 
     sendMove(Mdata, Mresult);
 }
-*/
+
 
 void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot) {
     Mdata->action = DRAW_OBJECTIVES;
@@ -178,7 +255,7 @@ void nbWagons(route route[80], GameData* Gdata, int G[36][36]){
     }
 }
 
-void dijkstra(int src, route routes_dispos[80], GameData* Gdata, int D[36], int Prec[20]){
+void dijkstra(int src, route routes_dispos[80], GameData* Gdata, int D[36], int Prec[36]){
     int N = Gdata->nbCities;
     int visite[N];
     int G[N][N];
@@ -214,7 +291,7 @@ int distanceMini(int D[36], int visite[36], int N){
     return indice_min;
 }
 
-void afficherChemin(int src, int dest, int Prec[20]) {
+void afficherChemin(int src, int dest, int Prec[36]) {
     int v = dest;
     printf("Chemin de %d à %d : ", src, dest);
     while (v != src && v != -1) {
@@ -304,6 +381,8 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
         Mdata->claimRoute.color = color_max;
         Mdata->claimRoute.nbLocomotives = nbLoco_max;
 
+        printf("Claim: %d -> %d | color: %d | length: %d\n", from_max, to_max, color_max, len_max);
+
         sendMove(Mdata, Mresult);
 
         routes[i_max].owner = 0;
@@ -313,7 +392,6 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
         MyBot->cardByColor[color_max] -= (len_max - nbLoco_max);
         MyBot->cardByColor[LOCOMOTIVE] -= nbLoco_max;
 
-        printf("Claim: %d -> %d | color: %d | length: %d\n", from_max, to_max, color_max, len_max);
         return;
     }
 
@@ -397,7 +475,9 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
 
     if (obj_atteints == MyBot->nb_obj){
         if(MyBot->wagons_opp >= 15){
-            chooseObjectivesBot(Mresult, Mdata, MyBot);
+            // chooseObjectivesBot(Mresult, Mdata, MyBot);
+            chooseObjectivesBot2(Mresult, Mdata, MyBot, Gdata, routes);
+
         }
         else{
             MyBot->state = 1;
@@ -423,7 +503,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
             afficherChemin(src, dest, Prec);
 
             // Parcours du chemin
-            int chemin[36];
+            int chemin[20];
             int len = 0;
             int v = dest;
             while (v != src && v != -1) {
@@ -501,6 +581,8 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             Mdata->claimRoute.color = best_color;
                             Mdata->claimRoute.nbLocomotives = nbLoco;
                         
+                            printf("Claimed route %d-%d, color=%d, length=%d\n", c1, c2, best_color, length);
+
                             sendMove(Mdata, Mresult);
                         
                             routes[j].owner = 0;
@@ -509,7 +591,6 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
                             MyBot->nbCards -= length;
                         
-                            printf("Claimed route %d-%d, color=%d, length=%d\n", c1, c2, best_color, length);
                             return;
                         }
                         

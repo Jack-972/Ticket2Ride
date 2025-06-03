@@ -19,6 +19,8 @@ int main(){
     route routes_dispos[80];
     DEBUG_LEVEL = MESSAGE;
 
+    // int Victoire = 0;
+
     // while (1){
     for (int k=0; k<1; k++){
 
@@ -46,7 +48,8 @@ int main(){
         printBoard();
         cardOnTheBoard(&board);     // Afficher les cartes disponibles
         // startObj();
-        chooseObjectivesBot(&Mresult, &Mdata, &MyBot);
+        // chooseObjectivesBot(&Mresult, &Mdata, &MyBot);
+        chooseObjectivesBot2(&Mresult, &Mdata, &MyBot, &Gdata, routes_dispos);
                 
         if (Gdata.starter == 0){
             getMove(&Mdata, &Mresult);

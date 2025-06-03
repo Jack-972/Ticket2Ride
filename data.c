@@ -16,6 +16,8 @@ typedef struct obj_ {
     unsigned int city2;      // Ville d'arrivée de l'objectif (correspond à 'to')
     unsigned int score;      // Score associé à l'objectif
     int done;
+    int index;
+    int length;
 } obj;
 
 typedef struct partie_ {

@@ -17,6 +17,8 @@ typedef struct obj_ {
     unsigned int city2;
     unsigned int score;
     int done;
+    int index;
+    int length;
 } obj;
 
 typedef struct partie_ {
