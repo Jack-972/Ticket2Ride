@@ -429,43 +429,69 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
 
                         if ((r.city1 == c1 && r.city2 == c2) || (r.city1 == c2 && r.city2 == c1)) {
                             int needed = r.length;
-                            int color = r.color1;
+                            int best_color = -1;
+                            int best_color_cards = 0;
                             int locomotives = MyBot->cardByColor[LOCOMOTIVE];
-                            int color_cards = MyBot->cardByColor[color];
+                        
+                            // Prendre en compte color1 et color2 (si bicolore)
+                            CardColor colors[2] = {r.color1, r.color2};
 
-                            if (color == LOCOMOTIVE) {
-                                color_cards = 0;
-                                for (int k = 1; k <= 8; k++) {
-                                    if (MyBot->cardByColor[k] + locomotives >= needed) {
-                                        color = k;
-                                        color_cards = MyBot->cardByColor[k];
-                                        break;
+                            couleurs_utiles[colors[0]] = 2;
+                            printf("Color utile : %d\n", colors[0]);
+                            if (colors[1] != NONE){
+                                couleurs_utiles[colors[1]] = 2;
+                                printf("Color utile : %d\n", colors[1]);
+                            }
+                        
+                            for (int ci = 0; ci < 2; ci++) {
+                                CardColor color = colors[ci];
+                                if (color == NONE) continue;
+                        
+                                int count = MyBot->cardByColor[color];
+                                if (count + locomotives >= needed) {
+                                    if (count > best_color_cards) {
+                                        best_color = color;
+                                        best_color_cards = count;
                                     }
                                 }
                             }
-                            if (color_cards == 0) continue;
-                            couleurs_utiles[color] = 2;
-
-                            if (MyBot->wagons >= needed && (color_cards + locomotives >= needed)) {
-                                int nbLoco = (needed > color_cards) ? (needed - color_cards) : 0;
-                                Mdata->action = CLAIM_ROUTE;
-                                Mdata->claimRoute.from = c1;
-                                Mdata->claimRoute.to = c2;
-                                Mdata->claimRoute.color = color;
-                                Mdata->claimRoute.nbLocomotives = nbLoco;
-
-                                sendMove(Mdata, Mresult);
-
-                                routes[j].owner = 0;
-                                MyBot->wagons -= needed;
-                                MyBot->cardByColor[color] -= (needed - nbLoco);
-                                MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
-                                MyBot->nbCards -= needed;
-
-                                printf("Claimed route %d-%d, color=%d, length=%d\n", c1, c2, color, needed);
-                                return;
+                        
+                            // Cas particulier
+                            if (r.color1 == LOCOMOTIVE) {
+                                for (int k = 1; k <= 8; k++) {
+                                    int count = MyBot->cardByColor[k];
+                                    if (count + locomotives >= needed && count > best_color_cards) {
+                                        best_color = k;
+                                        best_color_cards = count;
+                                    }
+                                }
                             }
+                        
+                            if (best_color == -1) continue; // aucune couleur suffisante trouvée
+                        
+                        
+                            if (MyBot->wagons < needed) continue;
+                        
+                            int nbLoco = (needed > best_color_cards) ? (needed - best_color_cards) : 0;
+                        
+                            Mdata->action = CLAIM_ROUTE;
+                            Mdata->claimRoute.from = c1;
+                            Mdata->claimRoute.to = c2;
+                            Mdata->claimRoute.color = best_color;
+                            Mdata->claimRoute.nbLocomotives = nbLoco;
+                        
+                            sendMove(Mdata, Mresult);
+                        
+                            routes[j].owner = 0;
+                            MyBot->wagons -= needed;
+                            MyBot->cardByColor[best_color] -= (needed - nbLoco);
+                            MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
+                            MyBot->nbCards -= needed;
+                        
+                            printf("Claimed route %d-%d, color=%d, length=%d\n", c1, c2, best_color, needed);
+                            return;
                         }
+                        
                     }
                 }
             }
@@ -479,16 +505,19 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     BoardState board;
     getBoardState(&board);
     int picked = 0;
-    for (int i = 0; i < 5 && picked < 2; i++) {
-        if (couleurs_utiles[board.card[i]] > 0 && board.card[i] != LOCOMOTIVE) {
-            Mdata->action = DRAW_CARD;
-            Mdata->drawCard = board.card[i];
-            printf("carte piochée : %d, numéro : %d\n", board.card[i], i);
-            sendMove(Mdata, Mresult);
-            MyBot->cardByColor[board.card[i]]++;
-            couleurs_utiles[board.card[i]]--;
-            picked++;
-            MyBot->nbCards++;
+    for (int j=0; j<2; j++){
+        for (int i = 0; i < 5 && picked < 2; i++) {
+            if (couleurs_utiles[board.card[i]] > 0 && board.card[i] != LOCOMOTIVE) {
+                Mdata->action = DRAW_CARD;
+                Mdata->drawCard = board.card[i];
+                printf("carte piochée : %d, numéro : %d\n", board.card[i], i);
+                sendMove(Mdata, Mresult);
+                MyBot->cardByColor[board.card[i]]++;
+                couleurs_utiles[board.card[i]]--;
+                picked++;
+                MyBot->nbCards++;
+                getBoardState(&board);
+            }
         }
         // else if (board.card[i] == LOCOMOTIVE && picked == 0) {
         //     Mdata->action = DRAW_CARD;

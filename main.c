@@ -21,10 +21,10 @@ int main(){
 
     while (1){
 
-        int connect = connectToCGS("82.29.170.160", 15001, "Jack2");
+        int connect = connectToCGS("82.29.170.160", 15001, "Jack");
 
-        sendGameSettings("", &Gdata);
-        // sendGameSettings("TRAINING NICE_BOT", &Gdata);
+        // sendGameSettings("", &Gdata);
+        sendGameSettings("TRAINING NICE_BOT", &Gdata);
 
         
         printf("Connect : %d\n", connect);
