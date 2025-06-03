@@ -241,7 +241,7 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
     int len_max = 0;
     int i_max = -1;
     int from_max = -1, to_max = -1, color_max = -1;
-    int cards_in_color_max = 0;
+    int nbLoco_max = 0;
 
     for (int i = 0; i < Gdata->nbTracks; i++) {
         if (routes[i].owner != -1) continue;
@@ -251,43 +251,58 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
         int length = routes[i].length;
         int locomotives = MyBot->cardByColor[LOCOMOTIVE];
 
-        // Choix de couleur : si LOCOMOTIVE, choisir une réelle
-        int color = routes[i].color1;
-        int cards_in_color = MyBot->cardByColor[color];
+        // Prendre les couleurs possibles
+        CardColor colors[2] = {routes[i].color1, routes[i].color2};
+        int best_color = -1;
+        int nb_best_color = 0;
 
-        if (color == LOCOMOTIVE) {
-            cards_in_color = 0;
-            for (int j = 1; j <= 8; j++) {
-                if (MyBot->cardByColor[j] + locomotives >= length) {
-                    color = j;
-                    cards_in_color = MyBot->cardByColor[j];
-                    break;
+        for (int ci = 0; ci < 2; ci++) {
+            CardColor color = colors[ci];
+            if (color == NONE) continue;
+            
+            if (color != LOCOMOTIVE){
+                int count = MyBot->cardByColor[color];
+                if (count + locomotives >= length) {
+                    if (count >= nb_best_color) {
+                        best_color = color;
+                        nb_best_color = count;
+                    }
+                }
+            }
+            else{
+                for (int k = 1; k <= 8; k++) {
+                    int count = MyBot->cardByColor[k];
+                    best_color = -1;
+                    if (count + locomotives >= length) {
+                        best_color = k;
+                        nb_best_color = count;
+                        break;
+                    }
                 }
             }
         }
 
-        int total = cards_in_color + locomotives;
+        if (best_color == -1) continue;  // Aucune couleur possible
 
-        if (cards_in_color == 0 || total < length || MyBot->wagons < length) continue;
+        int total = nb_best_color + locomotives;
+        if (total < length || MyBot->wagons < length) continue;
 
         if (length > len_max) {
             len_max = length;
             i_max = i;
             from_max = from;
             to_max = to;
-            color_max = color;
-            cards_in_color_max = cards_in_color;
+            color_max = best_color;
+            nbLoco_max = (length > nb_best_color) ? (length - nb_best_color) : 0;
         }
     }
 
     if (i_max != -1) {
-        int nbLoco = (len_max > cards_in_color_max) ? (len_max - cards_in_color_max) : 0;
-
         Mdata->action = CLAIM_ROUTE;
         Mdata->claimRoute.from = from_max;
         Mdata->claimRoute.to = to_max;
         Mdata->claimRoute.color = color_max;
-        Mdata->claimRoute.nbLocomotives = nbLoco;
+        Mdata->claimRoute.nbLocomotives = nbLoco_max;
 
         sendMove(Mdata, Mresult);
 
@@ -295,12 +310,13 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
         MyBot->nbTracks_me++;
         MyBot->wagons -= len_max;
         MyBot->nbCards -= len_max;
-        MyBot->cardByColor[color_max] -= (len_max - nbLoco);
-        MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
+        MyBot->cardByColor[color_max] -= (len_max - nbLoco_max);
+        MyBot->cardByColor[LOCOMOTIVE] -= nbLoco_max;
 
         printf("Claim: %d -> %d | color: %d | length: %d\n", from_max, to_max, color_max, len_max);
         return;
     }
+
 
     // Fallback : piocher
     printf("Pas de claim possible, on pioche.\n");
@@ -428,17 +444,19 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                         if (r.owner != -1) continue;
 
                         if ((r.city1 == c1 && r.city2 == c2) || (r.city1 == c2 && r.city2 == c1)) {
-                            int needed = r.length;
+                            int length = r.length;
                             int best_color = -1;
-                            int best_color_cards = 0;
+                            int nb_best_color = 0;
                             int locomotives = MyBot->cardByColor[LOCOMOTIVE];
                         
                             // Prendre en compte color1 et color2 (si bicolore)
                             CardColor colors[2] = {r.color1, r.color2};
 
-                            couleurs_utiles[colors[0]] = 2;
-                            printf("Color utile : %d\n", colors[0]);
-                            if (colors[1] != NONE){
+                            if (colors[0]!= LOCOMOTIVE){
+                                couleurs_utiles[colors[0]] = 2;
+                                printf("Color utile : %d\n", colors[0]);
+                            }
+                            if (colors[1] != NONE && colors[1] != LOCOMOTIVE){
                                 couleurs_utiles[colors[1]] = 2;
                                 printf("Color utile : %d\n", colors[1]);
                             }
@@ -446,33 +464,36 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             for (int ci = 0; ci < 2; ci++) {
                                 CardColor color = colors[ci];
                                 if (color == NONE) continue;
-                        
-                                int count = MyBot->cardByColor[color];
-                                if (count + locomotives >= needed) {
-                                    if (count > best_color_cards) {
-                                        best_color = color;
-                                        best_color_cards = count;
+                                
+                                if (color != LOCOMOTIVE){
+                                    int count = MyBot->cardByColor[color];
+                                    if (count + locomotives >= length) {
+                                        if (count >= nb_best_color) {
+                                            best_color = color;
+                                            nb_best_color = count;
+                                        }
+                                    }
+                                }
+                                else{
+                                    for (int k = 1; k <= 8; k++) {
+                                        int count = MyBot->cardByColor[k];
+                                        best_color = -1;
+                                        if (count + locomotives >= length) {
+                                            best_color = k;
+                                            nb_best_color = count;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         
-                            // Cas particulier
-                            if (r.color1 == LOCOMOTIVE) {
-                                for (int k = 1; k <= 8; k++) {
-                                    int count = MyBot->cardByColor[k];
-                                    if (count + locomotives >= needed && count > best_color_cards) {
-                                        best_color = k;
-                                        best_color_cards = count;
-                                    }
-                                }
-                            }
-                        
+                            
                             if (best_color == -1) continue; // aucune couleur suffisante trouvée
                         
                         
-                            if (MyBot->wagons < needed) continue;
+                            if (MyBot->wagons < length) continue;
                         
-                            int nbLoco = (needed > best_color_cards) ? (needed - best_color_cards) : 0;
+                            int nbLoco = (length > nb_best_color) ? (length - nb_best_color) : 0;
                         
                             Mdata->action = CLAIM_ROUTE;
                             Mdata->claimRoute.from = c1;
@@ -483,12 +504,12 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             sendMove(Mdata, Mresult);
                         
                             routes[j].owner = 0;
-                            MyBot->wagons -= needed;
-                            MyBot->cardByColor[best_color] -= (needed - nbLoco);
+                            MyBot->wagons -= length;
+                            MyBot->cardByColor[best_color] -= (length - nbLoco);
                             MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
-                            MyBot->nbCards -= needed;
+                            MyBot->nbCards -= length;
                         
-                            printf("Claimed route %d-%d, color=%d, length=%d\n", c1, c2, best_color, needed);
+                            printf("Claimed route %d-%d, color=%d, length=%d\n", c1, c2, best_color, length);
                             return;
                         }
                         

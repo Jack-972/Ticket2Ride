@@ -19,7 +19,8 @@ int main(){
     route routes_dispos[80];
     DEBUG_LEVEL = MESSAGE;
 
-    while (1){
+    // while (1){
+    for (int k=0; k<1; k++){
 
         int connect = connectToCGS("82.29.170.160", 15001, "Jack");
 
