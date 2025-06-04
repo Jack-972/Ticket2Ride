@@ -23,11 +23,12 @@ typedef struct obj_ {
 typedef struct partie_ {
     int player;              // Joueur actuel (0 ou 1)
     int cardByColor[10];      // Nombre de cartes par couleur (suivant l'enum CardColor)
-    obj tab_obj[10];         // Tableau des objectifs
-    int nb_obj;              // Nombre d'objectifs possédés
+    obj tab_obj[10], tab_obj_opp[10];         // Tableau des objectifs
+    int nb_obj, nb_obj_opp;              // Nombre d'objectifs possédés
     CardColor cardToPick[5]; // Cartes visibles à piocher (utilise l'enum CardColor)
     int wagons, wagons_opp;  // Nombre de wagons restants pour le joueur et l'adversaire
     int nbTracks_tot, nbTracks_me, nbTracks_opp;
+    int score, score_opp;
     int nbCards;
     int state;               // État actuel du jeu 
 } partie;
@@ -35,6 +36,7 @@ typedef struct partie_ {
 void initPartie(partie* MyBot, GameData Gdata){
     MyBot->player = 0;
     MyBot->nb_obj = 0;
+    MyBot->nb_obj_opp = 0;
     MyBot->wagons = 45;
     MyBot->wagons_opp = 45;
     MyBot->nbTracks_tot = Gdata.nbTracks;
@@ -42,6 +44,8 @@ void initPartie(partie* MyBot, GameData Gdata){
     MyBot->nbTracks_opp = 0;
     MyBot->state = 0;
     MyBot->nbCards = 4;
+    MyBot->score = 0;
+    MyBot->score_opp = 0;
     for (int i=0; i < 10; i++){
         MyBot->cardByColor[i] = 0;
     }
@@ -52,6 +56,30 @@ void initPartie(partie* MyBot, GameData Gdata){
         MyBot->tab_obj[i].done = 0;
     }
 
+}
+
+int calcul(int a){
+    switch (a)
+    {
+    case 1:
+        return 1;
+
+    case 2:
+        return 2;
+
+    case 3:
+        return 4;
+
+    case 4:
+        return 7;
+    case 5:
+        return 10;
+    case 6:
+        return 15;
+    
+    default:
+        return 0;
+    }
 }
 
 void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]) {
@@ -67,6 +95,8 @@ void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]) {
                 if (routes_dispos[i].owner != 1){
                     routes_dispos[i].owner = 1;
                     MyBot->wagons_opp -= routes_dispos[i].length;
+                    MyBot->score_opp += calcul(routes_dispos[i].length);
+                    printf("score opp : %d\n", MyBot->score_opp);
                     break;
                 }
             }

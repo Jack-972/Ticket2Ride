@@ -391,6 +391,7 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
         MyBot->nbCards -= len_max;
         MyBot->cardByColor[color_max] -= (len_max - nbLoco_max);
         MyBot->cardByColor[LOCOMOTIVE] -= nbLoco_max;
+        MyBot->score += calcul(len_max);
 
         return;
     }
@@ -432,12 +433,12 @@ void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBo
 
 // depth first search
 
-int dfs(int src, int dest, int visite[], int nbCities, route routes[], int nbRoutes) {  
+int dfs(int src, int dest, int visite[], int nbCities, route routes[], int nbRoutes, int player) {  
     if (src == dest) return 1;
     visite[src] = 1;
 
     for (int i = 0; i < nbRoutes; i++) {
-        if (routes[i].owner == 0) {  // Seulement les routes possédées par le bot
+        if (routes[i].owner == player) {  // Seulement les routes possédées par le bot
             int a = routes[i].city1;
             int b = routes[i].city2;
             int next = -1;
@@ -445,7 +446,7 @@ int dfs(int src, int dest, int visite[], int nbCities, route routes[], int nbRou
             if (a == src && !visite[b]) next = b;
             else if (b == src && !visite[a]) next = a;
 
-            if (next != -1 && dfs(next, dest, visite, nbCities, routes, nbRoutes))
+            if (next != -1 && dfs(next, dest, visite, nbCities, routes, nbRoutes, player))
                 return 1;
         }
     }
@@ -453,11 +454,11 @@ int dfs(int src, int dest, int visite[], int nbCities, route routes[], int nbRou
     return 0;
 }
 
-int objectifAtteint(obj objectif, route routes[], int nbRoutes, int nbCities) {
+int objectifAtteint(obj objectif, route routes[], int nbRoutes, int nbCities, int player) {
     int visite[nbCities];
     for (int i = 0; i < nbCities; i++) visite[i] = 0;
 
-    return dfs(objectif.city1, objectif.city2, visite, nbCities, routes, nbRoutes);
+    return dfs(objectif.city1, objectif.city2, visite, nbCities, routes, nbRoutes, player);
 }
 
 
@@ -466,7 +467,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     int obj_atteints = 0;
 
     for (int i = 0; i < MyBot->nb_obj; i++) {
-        MyBot->tab_obj[i].done = objectifAtteint(MyBot->tab_obj[i], routes, Gdata->nbTracks, Gdata->nbCities);
+        MyBot->tab_obj[i].done = objectifAtteint(MyBot->tab_obj[i], routes, Gdata->nbTracks, Gdata->nbCities, 0);
         printf("Objectif %d -> %d : %s\n",
             MyBot->tab_obj[i].city1, MyBot->tab_obj[i].city2,
             MyBot->tab_obj[i].done ? "ATTEINT" : "PAS ENCORE");
@@ -590,6 +591,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             MyBot->cardByColor[best_color] -= (length - nbLoco);
                             MyBot->cardByColor[LOCOMOTIVE] -= nbLoco;
                             MyBot->nbCards -= length;
+                            MyBot->score += calcul(length);
                         
                             return;
                         }
