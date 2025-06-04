@@ -475,7 +475,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     }
 
     if (obj_atteints == MyBot->nb_obj){
-        if(MyBot->wagons_opp >= 15){
+        if(MyBot->wagons_opp >= 13){
             // chooseObjectivesBot(Mresult, Mdata, MyBot);
             chooseObjectivesBot2(Mresult, Mdata, MyBot, Gdata, routes);
 
@@ -534,11 +534,11 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                             CardColor colors[2] = {r.color1, r.color2};
 
                             if (colors[0]!= LOCOMOTIVE){
-                                couleurs_utiles[colors[0]] = 2;
+                                couleurs_utiles[colors[0]] += length - MyBot->cardByColor[colors[0]];
                                 printf("Color utile : %d\n", colors[0]);
                             }
                             if (colors[1] != NONE && colors[1] != LOCOMOTIVE){
-                                couleurs_utiles[colors[1]] = 2;
+                                couleurs_utiles[colors[1]] += length - MyBot->cardByColor[colors[1]];
                                 printf("Color utile : %d\n", colors[1]);
                             }
                         
@@ -621,15 +621,18 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                 picked++;
                 MyBot->nbCards++;
                 getBoardState(&board);
+                
             }
         }
-        // else if (board.card[i] == LOCOMOTIVE && picked == 0) {
-        //     Mdata->action = DRAW_CARD;
-        //     Mdata->drawCard = LOCOMOTIVE;
-        //     sendMove(Mdata, Mresult);
-        //     MyBot->cardByColor[LOCOMOTIVE]++;
-        //     picked += 2;
-        // }
+    }
+    for (int i = 0; i < 5 && picked < 1; i++) {
+        if (board.card[i] == LOCOMOTIVE && picked == 0) {
+            Mdata->action = DRAW_CARD;
+            Mdata->drawCard = LOCOMOTIVE;
+            sendMove(Mdata, Mresult);
+            MyBot->cardByColor[LOCOMOTIVE]++;
+            picked += 2;
+        }
     }
     while (picked < 2) {
         Mdata->action = DRAW_BLIND_CARD;

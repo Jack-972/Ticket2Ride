@@ -19,13 +19,14 @@ int main(){
     route routes_dispos[80];
     DEBUG_LEVEL = MESSAGE;
 
-    // int Victoire = 0;
-    // int nbParties = 0;
+    int Victoire = 0;
+    int nbParties = 0;
+    int state = 1;
 
     while (1){
     // for (int k=0; k<1; k++){
 
-        int connect = connectToCGS("82.29.170.160", 15001, "Jack");
+        int connect = connectToCGS("82.29.170.160", 15001, "Jack2");
 
         sendGameSettings("", &Gdata);
         // sendGameSettings("TRAINING NICE_BOT", &Gdata);
@@ -83,11 +84,29 @@ int main(){
             if (MyBot.state == 1){
                 claimer(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
             }
+            if(Mresult.state == WINNING_MOVE && state == 1){
+                Victoire++;
+                nbParties++;
+                state = 0;
+            }
+            else if(Mresult.state == LOSING_MOVE && state == 1){
+                nbParties++;
+                state = 0;
+            }
             if (!((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))){
                 getMove(&Mdata, &Mresult);  // Attendre le coup de l'adversaire
                 if (Mresult.replay == 1){
                     getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
                 }
+            }
+            if(Mresult.state == WINNING_MOVE && state == 1){
+                nbParties++;
+                state = 0;
+            }
+            else if(Mresult.state == LOSING_MOVE && state == 1){
+                nbParties++;
+                Victoire++;
+                state = 0;
             }
             if (Mdata.action == CLAIM_ROUTE){
                 routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
