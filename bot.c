@@ -475,7 +475,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     }
 
     if (obj_atteints == MyBot->nb_obj){
-        if(MyBot->wagons_opp >= 13){
+        if(MyBot->wagons_opp >= 10){
             // chooseObjectivesBot(Mresult, Mdata, MyBot);
             chooseObjectivesBot2(Mresult, Mdata, MyBot, Gdata, routes);
 
@@ -487,10 +487,10 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
         return;
     }
 
-    if (MyBot->nbCards >= 25){
-        MyBot->state = 1;
-        return;
-    }
+    // if (MyBot->nbCards >= 25){
+    //     MyBot->state = 1;
+    //     return;
+    // }
 
     int couleurs_utiles[10] = {0};
     int src;
@@ -567,7 +567,16 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
                                     }
                                 }
                             }
-                        
+                            
+                            
+                            if (MyBot->nbCards >= 25 && (MyBot->cardByColor[colors[0]] + locomotives < 6) && couleurs_utiles[colors[0]] != 0){
+                                MyBot->state = 1;
+                                return;
+                            }
+                            if (MyBot->nbCards >= 25 && (MyBot->cardByColor[colors[1]] + locomotives < 6) && couleurs_utiles[colors[1]] != 0){
+                                MyBot->state = 1;
+                                return;
+                            }
                             
                             if (best_color == -1) continue; // aucune couleur suffisante trouvée
                         

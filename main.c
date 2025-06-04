@@ -23,13 +23,13 @@ int main(){
     int nbParties = 0;
 
     // while (1){
-    for (int k=0; k<1; k++){
+    for (int k=0; k<10; k++){
         int state = 1;  // État du bot, 1 = en jeu, 0 = terminé
 
         int connect = connectToCGS("82.29.170.160", 15001, "Jack");
 
-        sendGameSettings("", &Gdata);
-        // sendGameSettings("TRAINING PLAY_RANDOM", &Gdata);
+        // sendGameSettings("", &Gdata);
+        sendGameSettings("TRAINING NICE_BOT", &Gdata);
 
         
         printf("Connect : %d\n", connect);
