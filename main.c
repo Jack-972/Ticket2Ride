@@ -21,15 +21,15 @@ int main(){
 
     int Victoire = 0;
     int nbParties = 0;
-    int state = 1;
 
-    while (1){
-    // for (int k=0; k<1; k++){
+    // while (1){
+    for (int k=0; k<1; k++){
+        int state = 1;  // État du bot, 1 = en jeu, 0 = terminé
 
-        int connect = connectToCGS("82.29.170.160", 15001, "Jack2");
+        int connect = connectToCGS("82.29.170.160", 15001, "Jack");
 
         sendGameSettings("", &Gdata);
-        // sendGameSettings("TRAINING NICE_BOT", &Gdata);
+        // sendGameSettings("TRAINING PLAY_RANDOM", &Gdata);
 
         
         printf("Connect : %d\n", connect);
@@ -49,7 +49,6 @@ int main(){
         getBoardState(&board);      // Récupérer l'état du plateau
         printBoard();
         cardOnTheBoard(&board);     // Afficher les cartes disponibles
-        // startObj();
         // chooseObjectivesBot(&Mresult, &Mdata, &MyBot);
         chooseObjectivesBot2(&Mresult, &Mdata, &MyBot, &Gdata, routes_dispos);
                 
@@ -125,47 +124,16 @@ int main(){
                     }
                 }
             }
-            // if (((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))){
-            //     for (int i=0; i<MyBot.nb_obj; i++){
-            //         if (MyBot.tab_obj[i].done){
-            //             MyBot.score += MyBot.tab_obj[i].score;
-            //         }
-            //         else{
-            //             MyBot.score -= MyBot.tab_obj[i].score;
-            //         }
-            //     }
-            //     for (int i = 0; i < MyBot.nb_obj_opp; i++) {
-            //         MyBot.tab_obj_opp[i].done = objectifAtteint(MyBot.tab_obj_opp[i], routes_dispos, Gdata.nbTracks, Gdata.nbCities, 1);
-            //         if (MyBot.tab_obj_opp[i].done){
-            //             MyBot.score_opp += MyBot.tab_obj_opp[i].score;
-            //         }
-            //         else{
-            //             MyBot.score_opp -= MyBot.tab_obj_opp[i].score;
-            //         }
-            //     }
-            //     printf("Mon score : %d\n", MyBot.score);
-            //     printf("Score adversaire : %d\n", MyBot.score_opp);
-            //     if (MyBot.score > MyBot.score_opp){
-            //         Victoire++;
-            //         printf("Victoire !\n");
-            //     }
-            //     else if (MyBot.score == MyBot.score_opp){
-            //         Victoire += 0.5;
-            //         printf("Match nul\n");
-            //     }
-            //     else{
-            //         printf("Défaite\n");
-            //     }
-            //     nbParties++;
-            // 
-            // }
 
         }
         quitGame();
-        // printf("Nombre de victoires : %d\n", Victoire);
-        // printf("Nombre de victoires : %d\n", nbParties - Victoire);
+        printf("Nombre de victoires : %d\n", Victoire);
+        printf("Nombre de défaites : %d\n", nbParties - Victoire);
 
     }
+
+    printf("Score finale [V,D] : [%d, %d]\n", Victoire, nbParties - Victoire);
+    printf("Pourcentage de victoire : %.2f%%\n", (float)Victoire / nbParties * 100);
 
 
     return 0;
