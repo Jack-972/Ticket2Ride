@@ -475,7 +475,7 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
     }
 
     if (obj_atteints == MyBot->nb_obj){
-        if(MyBot->wagons_opp >= 10){
+        if(MyBot->wagons_opp >= 14){
             // chooseObjectivesBot(Mresult, Mdata, MyBot);
             chooseObjectivesBot2(Mresult, Mdata, MyBot, Gdata, routes);
 
@@ -487,10 +487,10 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
         return;
     }
 
-    // if (MyBot->nbCards >= 25){
-    //     MyBot->state = 1;
-    //     return;
-    // }
+    if (MyBot->nbCards >= 26){
+        MyBot->state = 1;
+        return;
+    }
 
     int couleurs_utiles[10] = {0};
     int src;
@@ -634,15 +634,15 @@ void playBotTurn(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* 
             }
         }
     }
-    for (int i = 0; i < 5 && picked < 1; i++) {
-        if (board.card[i] == LOCOMOTIVE && picked == 0) {
-            Mdata->action = DRAW_CARD;
-            Mdata->drawCard = LOCOMOTIVE;
-            sendMove(Mdata, Mresult);
-            MyBot->cardByColor[LOCOMOTIVE]++;
-            picked += 2;
-        }
-    }
+    // for (int i = 0; i < 5 && picked < 1; i++) {
+    //     if (board.card[i] == LOCOMOTIVE && picked == 0) {
+    //         Mdata->action = DRAW_CARD;
+    //         Mdata->drawCard = LOCOMOTIVE;
+    //         sendMove(Mdata, Mresult);
+    //         MyBot->cardByColor[LOCOMOTIVE]++;
+    //         picked += 2;
+    //     }
+    // }
     while (picked < 2) {
         Mdata->action = DRAW_BLIND_CARD;
         printf("carte piochée : %d\n", Mresult->card);

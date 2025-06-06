@@ -22,14 +22,14 @@ int main(){
     int Victoire = 0;
     int nbParties = 0;
 
-    // while (1){
-    for (int k=0; k<10; k++){
+    while (1){
+    // for (int k=0; k<1; k++){
         int state = 1;  // État du bot, 1 = en jeu, 0 = terminé
 
-        int connect = connectToCGS("82.29.170.160", 15001, "Jack");
+        int connect = connectToCGS("82.29.170.160", 15001, "Jacques_ARNAULD");
 
-        // sendGameSettings("", &Gdata);
-        sendGameSettings("TRAINING NICE_BOT", &Gdata);
+        sendGameSettings("", &Gdata);
+        // sendGameSettings("TRAINING NICE_BOT", &Gdata);
 
         
         printf("Connect : %d\n", connect);
@@ -129,6 +129,10 @@ int main(){
         quitGame();
         printf("Nombre de victoires : %d\n", Victoire);
         printf("Nombre de défaites : %d\n", nbParties - Victoire);
+        // if (Victoire == 5 || nbParties - Victoire == 5){
+        //     printf("Fin de la série de parties.\n");
+        //     break;  // Sortir de la boucle si on a atteint 5 victoires ou 5 défaites
+        // }
 
     }
 
