@@ -34,7 +34,7 @@ typedef struct partie_ {
     int state;
 } partie;
 
-void initPartie(partie* MyBot, GameData Gdata);
+void initPartie(partie* MyBot, GameData* Gdata);
 int calcul(int a);
 void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]);
 

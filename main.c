@@ -38,7 +38,7 @@ int main(){
         printf("Game name : %s\n", Gdata.gameName);
 
         printBoard();                              // Display initial map
-        initPartie(&MyBot, Gdata);                 // Initialize bot data structures
+        initPartie(&MyBot, &Gdata);                 // Initialize bot data structures
         initRoutesFromTrackData(Gdata, routes_dispos); // Parse route data from GameData
 
         // If the bot starts first, receive move from opponent (possibly twice)

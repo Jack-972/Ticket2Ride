@@ -43,13 +43,13 @@ typedef struct partie_ {
 } partie;
 
 // Initializes the game state for the bot at the beginning of a game
-void initPartie(partie* MyBot, GameData Gdata){
+void initPartie(partie* MyBot, GameData* Gdata){
     MyBot->player = 0;
     MyBot->nb_obj = 0;
     MyBot->nb_obj_opp = 0;
     MyBot->wagons = 45;         // Initial number of wagons
     MyBot->wagons_opp = 45;
-    MyBot->nbTracks_tot = Gdata.nbTracks;
+    MyBot->nbTracks_tot = Gdata->nbTracks;
     MyBot->nbTracks_me = 0;
     MyBot->nbTracks_opp = 0;
     MyBot->state = 0;
@@ -60,11 +60,6 @@ void initPartie(partie* MyBot, GameData Gdata){
     // Initialize all card colors to 0
     for (int i = 0; i < 10; i++){
         MyBot->cardByColor[i] = 0;
-    }
-
-    // Count the initial 4 cards dealt to the bot
-    for (int i = 0; i < 4; i++){
-        MyBot->cardByColor[Gdata.cards[i]] += 1;
     }
 
     // Mark all objectives as incomplete
