@@ -4,7 +4,7 @@
 #include "data.h"
 #include "../tickettorideapi/ticketToRide.h"
 
-void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot);  // choisir les objectifs
+void chooseObjectivesBot(MoveResult* Mresult, MoveData* Mdata, partie* MyBot); 
 void chooseObjectivesBot2(MoveResult* Mresult, MoveData* Mdata, partie* MyBot, GameData* Gdata, route routes[80]);
 void initRoutesFromTrackData(GameData Gdata, route routes[80]);
 void claimer(MoveResult* Mresult, MoveData* Mdata, GameData* Gdata, partie* MyBot, route routes[80]);

@@ -8,114 +8,131 @@
 
 extern int DEBUG_LEVEL;
 
-
+// Main function for simulating one or more Ticket to Ride games
 int main(){
-    GameData Gdata;
-    BoardState board;
-    MoveData Mdata;
-    MoveResult Mresult;
-    partie MyBot;
-    route routes[80];
-    route routes_dispos[80];
-    DEBUG_LEVEL = MESSAGE;
+    GameData Gdata;                   // General game configuration and state
+    BoardState board;                // Current state of the visible board (cards, etc.)
+    MoveData Mdata;                  // Structure used to send the bot's move
+    MoveResult Mresult;             // Structure used to receive result of a move
+    partie MyBot;                    // Data structure that holds information about our bot
+    route routes[80];               // List of all routes claimed by the opponent
+    route routes_dispos[80];        // List of all available routes in the game
 
-    int Victoire = 0;
-    int nbParties = 0;
+    DEBUG_LEVEL = MESSAGE;          // Debug level for logging
 
-    while (1){
-    // for (int k=0; k<1; k++){
-        int state = 1;  // État du bot, 1 = en jeu, 0 = terminé
+    int wins = 0;               // Wins counter
+    int nbGames = 0;            // Number of games played
 
+    // Loop to simulate multiple games
+    // while(1){
+    for (int k=0; k<1; k++){        // Replace '1' with desired number of games
+        int state = 1;              // Track game state (1 = in progress, 0 = over)
+
+        // Connect to CGS server
         int connect = connectToCGS("82.29.170.160", 15001, "Jacques_ARNAULD");
 
-        sendGameSettings("", &Gdata);
-        // sendGameSettings("TRAINING NICE_BOT", &Gdata);
+        // Set game mode
+        sendGameSettings("TRAINING NICE_BOT", &Gdata);
 
-        
         printf("Connect : %d\n", connect);
         printf("Game name : %s\n", Gdata.gameName);
 
-        printBoard();
-        initPartie(&MyBot, Gdata);
-        initRoutesFromTrackData(Gdata, routes_dispos);
+        printBoard();                              // Display initial map
+        initPartie(&MyBot, Gdata);                 // Initialize bot data structures
+        initRoutesFromTrackData(Gdata, routes_dispos); // Parse route data from GameData
 
+        // If the bot starts first, receive move from opponent (possibly twice)
         if (Gdata.starter == 1){
             getMove(&Mdata, &Mresult);
             if (Mresult.replay == 1){
-                getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+                getMove(&Mdata, &Mresult);
             }
         }
 
-        getBoardState(&board);      // Récupérer l'état du plateau
-        printBoard();
-        cardOnTheBoard(&board);     // Afficher les cartes disponibles
-        // chooseObjectivesBot(&Mresult, &Mdata, &MyBot);
-        chooseObjectivesBot2(&Mresult, &Mdata, &MyBot, &Gdata, routes_dispos);
-                
+        getBoardState(&board);             // Read board state
+        printBoard();                      // Display it
+        cardOnTheBoard(&board);            // Display available face-up cards
+        chooseObjectivesBot2(&Mresult, &Mdata, &MyBot, &Gdata, routes_dispos); // Choose starting objectives
+
+        // If bot plays second, wait for opponent’s move
         if (Gdata.starter == 0){
             getMove(&Mdata, &Mresult);
             if (Mresult.replay == 1){
-                getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+                getMove(&Mdata, &Mresult);
             }
         }
 
+        // First turn replay (if bot started and claimed a route)
         if (Gdata.starter == 1){
             getMove(&Mdata, &Mresult);
             if (Mresult.replay == 1){
-                getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+                getMove(&Mdata, &Mresult);
             }
             if (Mdata.action == CLAIM_ROUTE){
+                // Record opponent's claimed route
                 routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
                 routes[MyBot.nbTracks_opp].city2 = Mdata.claimRoute.to;
                 routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
                 routes[MyBot.nbTracks_opp].owner = 1;
-                MyBot.nbTracks_opp ++;
+                MyBot.nbTracks_opp++;
             }
         }
 
-        while (!((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))) {
-            majRoutesDispos(&MyBot, routes, routes_dispos);
-            getBoardState(&board);      // Récupérer l'état du plateau
+        // Game loop: repeat until win or loss
+        while (!(Mresult.state == WINNING_MOVE || Mresult.state == LOSING_MOVE)) {
+            majRoutesDispos(&MyBot, routes, routes_dispos); // Update available routes after each turn
+            getBoardState(&board);
             printBoard();
-            cardOnTheBoard(&board);     // Afficher les cartes disponibles
-            // playTurn(Mresult, Mdata);                 // Laisser le joueur jouer
+            cardOnTheBoard(&board);
+
+            // Bot plays its turn (either claim, draw cards, or choose objective)
             playBotTurn(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
+
             if (MyBot.state == 1){
+                // Fallback: attempt to claim a long or strategic route
                 claimer(&Mresult, &Mdata, &Gdata, &MyBot, routes_dispos);
             }
-            if(Mresult.state == WINNING_MOVE && state == 1){
-                Victoire++;
-                nbParties++;
+
+            // Track win/loss state (make sure counted only once)
+            if (Mresult.state == WINNING_MOVE && state == 1){
+                wins++;
+                nbGames++;
+                state = 0;
+            } else if (Mresult.state == LOSING_MOVE && state == 1){
+                nbGames++;
                 state = 0;
             }
-            else if(Mresult.state == LOSING_MOVE && state == 1){
-                nbParties++;
-                state = 0;
-            }
-            if (!((Mresult.state == WINNING_MOVE) || (Mresult.state == LOSING_MOVE))){
-                getMove(&Mdata, &Mresult);  // Attendre le coup de l'adversaire
+
+            // If game is not yet over, get opponent's move
+            if (!(Mresult.state == WINNING_MOVE || Mresult.state == LOSING_MOVE)){
+                getMove(&Mdata, &Mresult);
                 if (Mresult.replay == 1){
-                    getMove(&Mdata, &Mresult);   // Si l'adversaire rejoue
+                    getMove(&Mdata, &Mresult);
                 }
             }
-            if(Mresult.state == WINNING_MOVE && state == 1){
-                nbParties++;
+
+            // Track win/loss state again (after opponent's move)
+            if (Mresult.state == WINNING_MOVE && state == 1){
+                nbGames++;
+                state = 0;
+            } else if (Mresult.state == LOSING_MOVE && state == 1){
+                nbGames++;
+                wins++;
                 state = 0;
             }
-            else if(Mresult.state == LOSING_MOVE && state == 1){
-                nbParties++;
-                Victoire++;
-                state = 0;
-            }
+
+            // Save opponent’s claimed route
             if (Mdata.action == CLAIM_ROUTE){
                 routes[MyBot.nbTracks_opp].city1 = Mdata.claimRoute.from;
                 routes[MyBot.nbTracks_opp].city2 = Mdata.claimRoute.to;
                 routes[MyBot.nbTracks_opp].color1 = Mdata.claimRoute.color;
                 routes[MyBot.nbTracks_opp].owner = 1;
-                MyBot.nbTracks_opp ++;
+                MyBot.nbTracks_opp++;
             }
+
+            // If opponent chose objectives, record them
             if (Mdata.action == CHOOSE_OBJECTIVES){
-                for (int i=0; i<3; i++){
+                for (int i = 0; i < 3; i++){
                     if (Mdata.chooseObjectives[i]){
                         MyBot.tab_obj_opp[MyBot.nb_obj_opp].score = Mresult.objectives[i].score;
                         MyBot.tab_obj_opp[MyBot.nb_obj_opp].city1 = Mresult.objectives[i].from;
@@ -124,60 +141,19 @@ int main(){
                     }
                 }
             }
-
         }
-        quitGame();
-        printf("Nombre de victoires : %d\n", Victoire);
-        printf("Nombre de défaites : %d\n", nbParties - Victoire);
-        // if (Victoire == 5 || nbParties - Victoire == 5){
-        //     printf("Fin de la série de parties.\n");
-        //     break;  // Sortir de la boucle si on a atteint 5 victoires ou 5 défaites
-        // }
 
+        // Game is over, disconnect from server
+        quitGame();
+
+        // Display final result for this game
+        printf("Number of winning game : %d\n", wins);
+        printf("Number of losing game : %d\n", nbGames - wins);
     }
 
-    printf("Score finale [V,D] : [%d, %d]\n", Victoire, nbParties - Victoire);
-    printf("Pourcentage de victoire : %.2f%%\n", (float)Victoire / nbParties * 100);
-
+    // Final summary
+    printf("Final score [W,L] : [%d, %d]\n", wins, nbGames - wins);
+    printf("Winning percentage : %.2f%%\n", (float)wins / nbGames * 100);
 
     return 0;
 }
-
-
-
-/*
-
-pré-requis pour avoir un bot :
-1) programme capable de jouer manuellement (scanf)
-2) structure de données
-3) mettre à jour les données -> afficher les données
-4) bot 1 (Random Player)
-
-typedef struct route_{
-    ville 1
-    ville 2
-    couleur 1
-    couleur 2
-    par qui elle est prise
-}route;
-
-typedef struct obj_{
-    ville 1
-    ville 2
-    score
-}obj
-
-typedef struct partie_{
-    qui joue
-    nb de carte par couleur
-    tableau d'obj + nb d'obj
-    tableau de 5 cartes à piocher
-    nb de wagons + nb de wagons adv
-    etat
-}partie
-
-Conseils :
-Choisir objectif entre Nord Ouest et Sud Ouest, ou Est et Ouest
-Pas choisir obj dans l'Est
-
-*/

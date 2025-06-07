@@ -2,96 +2,105 @@
 #include <stdlib.h>
 #include "../tickettorideapi/ticketToRide.h"
 
+// Define a structure for a route between two cities
 typedef struct route_ {
-    unsigned int city1;      // Première ville de la route (correspond à 'from' dans ClaimRouteMove)
-    unsigned int city2;      // Deuxième ville de la route (correspond à 'to')
-    unsigned int length;     // Nb de Wagons entre les 2 villes
-    CardColor color1;        // Première couleur de la route
-    CardColor color2;        // Deuxième couleur (0 si monochrome)
-    int owner;               // Joueur qui a revendiqué la route (-1 si libre)
+    unsigned int city1;      // First city of the route (corresponds to 'from' in ClaimRouteMove)
+    unsigned int city2;      // Second city of the route (corresponds to 'to')
+    unsigned int length;     // Number of wagons needed to claim the route
+    CardColor color1;        // First color of the route
+    CardColor color2;        // Second color (NONE if the route is monochrome)
+    int owner;               // Route ownership: -1 = free, 0 = bot, 1 = opponent
 } route;
 
+// Define a structure for an objective
 typedef struct obj_ {
-    unsigned int city1;      // Ville de départ de l'objectif (correspond à 'from' dans Objective)
-    unsigned int city2;      // Ville d'arrivée de l'objectif (correspond à 'to')
-    unsigned int score;      // Score associé à l'objectif
-    int done;
-    int index;
-    int length;
+    unsigned int city1;      // Starting city (corresponds to 'from' in Objective)
+    unsigned int city2;      // Destination city (corresponds to 'to')
+    unsigned int score;      // Points awarded if the objective is completed
+    int done;                // 1 if the objective is completed, 0 otherwise
+    int index;               // Index used for identification or sorting
+    int length;              // Estimated number of wagons required to fulfill the objective
 } obj;
 
+// Define a structure for maintaining the game state
 typedef struct partie_ {
-    int player;              // Joueur actuel (0 ou 1)
-    int cardByColor[10];      // Nombre de cartes par couleur (suivant l'enum CardColor)
-    obj tab_obj[10], tab_obj_opp[10];         // Tableau des objectifs
-    int nb_obj, nb_obj_opp;              // Nombre d'objectifs possédés
-    CardColor cardToPick[5]; // Cartes visibles à piocher (utilise l'enum CardColor)
-    int wagons, wagons_opp;  // Nombre de wagons restants pour le joueur et l'adversaire
-    int nbTracks_tot, nbTracks_me, nbTracks_opp;
-    int score, score_opp;
-    int nbCards;
-    int state;               // État actuel du jeu 
+    int player;              // Current player ID (0 = bot, 1 = opponent)
+    int cardByColor[10];     // Number of cards held by color (CardColor enum index)
+    obj tab_obj[10];         // Array of the bot's objectives
+    obj tab_obj_opp[10];     // Array of the opponent's objectives
+    int nb_obj;              // Number of objectives held by the bot
+    int nb_obj_opp;          // Number of objectives held by the opponent
+    CardColor cardToPick[5]; // Cards visible on the board (draw pile)
+    int wagons;              // Remaining wagons for the bot
+    int wagons_opp;          // Remaining wagons for the opponent
+    int nbTracks_tot;        // Total number of routes in the game
+    int nbTracks_me;         // Number of routes claimed by the bot
+    int nbTracks_opp;        // Number of routes claimed by the opponent
+    int score;               // Score of the bot
+    int score_opp;           // Score of the opponent
+    int nbCards;             // Total number of cards held by the bot
+    int state;               // Current state (custom use, e.g. 0 = playing, 1 = waiting)
 } partie;
 
+// Initializes the game state for the bot at the beginning of a game
 void initPartie(partie* MyBot, GameData Gdata){
     MyBot->player = 0;
     MyBot->nb_obj = 0;
     MyBot->nb_obj_opp = 0;
-    MyBot->wagons = 45;
+    MyBot->wagons = 45;         // Initial number of wagons
     MyBot->wagons_opp = 45;
     MyBot->nbTracks_tot = Gdata.nbTracks;
     MyBot->nbTracks_me = 0;
     MyBot->nbTracks_opp = 0;
     MyBot->state = 0;
-    MyBot->nbCards = 4;
+    MyBot->nbCards = 4;         // Bot starts with 4 cards
     MyBot->score = 0;
     MyBot->score_opp = 0;
-    for (int i=0; i < 10; i++){
+
+    // Initialize all card colors to 0
+    for (int i = 0; i < 10; i++){
         MyBot->cardByColor[i] = 0;
     }
-    for (int i=0; i < 4; i++){
+
+    // Count the initial 4 cards dealt to the bot
+    for (int i = 0; i < 4; i++){
         MyBot->cardByColor[Gdata.cards[i]] += 1;
     }
-    for (int i=0; i < 10; i++){
+
+    // Mark all objectives as incomplete
+    for (int i = 0; i < 10; i++){
         MyBot->tab_obj[i].done = 0;
     }
-
 }
 
+// Calculates score based on the length of a claimed route
 int calcul(int a){
     switch (a)
     {
-    case 1:
-        return 1;
-
-    case 2:
-        return 2;
-
-    case 3:
-        return 4;
-
-    case 4:
-        return 7;
-    case 5:
-        return 10;
-    case 6:
-        return 15;
-    
-    default:
-        return 0;
+    case 1: return 1;
+    case 2: return 2;
+    case 3: return 4;
+    case 4: return 7;
+    case 5: return 10;
+    case 6: return 15;
+    default: return 0;
     }
 }
 
+// Updates the routes_dispos array based on claimed routes
 void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]) {
     for (int i = 0; i < MyBot->nbTracks_tot; i++) {
+
         if (routes_dispos[i].owner != -1) {
-            continue; // route déjà prise, on ne fait rien
+            continue; // Route already claimed, skip it
         }
 
-        // Vérifie si elle est dans les routes de l’adversaire
+        // Check if the opponent claimed this route
         for (int j = 0; j < MyBot->nbTracks_opp; j++) {
             if ((routes[j].city1 == routes_dispos[i].city1 && routes[j].city2 == routes_dispos[i].city2) ||
                 (routes[j].city1 == routes_dispos[i].city2 && routes[j].city2 == routes_dispos[i].city1)) {
+
+                // If it wasn't already marked, update ownership and opponent's state
                 if (routes_dispos[i].owner != 1){
                     routes_dispos[i].owner = 1;
                     MyBot->wagons_opp -= routes_dispos[i].length;
@@ -102,11 +111,12 @@ void majRoutesDispos(partie* MyBot, route routes[80], route routes_dispos[80]) {
             }
         }
 
-        // Vérifie si elle est dans les routes du bot
+        // Check if the bot claimed this route
         for (int j = 0; j < MyBot->nbTracks_me; j++) {
             if ((routes[j].city1 == routes_dispos[i].city1 && routes[j].city2 == routes_dispos[i].city2) ||
                 (routes[j].city1 == routes_dispos[i].city2 && routes[j].city2 == routes_dispos[i].city1)) {
-                routes_dispos[i].owner = 0;
+
+                routes_dispos[i].owner = 0; // Mark as owned by the bot
                 break;
             }
         }

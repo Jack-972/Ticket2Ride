@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "../tickettorideapi/ticketToRide.h"
 
+// Prints the cards currently on the board
 void cardOnTheBoard(BoardState *board){
     printf("Cards on the board are : ");
     for (int i = 0; i < 5; i++) {
@@ -10,6 +11,7 @@ void cardOnTheBoard(BoardState *board){
     printf("\n");
 }
 
+// Prints the objectives available in the current move result
 void printObjectives(MoveResult *Mresult){
     for (int i = 0; i < 3; i++) {
         printf("Objective %d : ", i);
