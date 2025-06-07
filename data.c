@@ -62,6 +62,11 @@ void initPartie(partie* MyBot, GameData* Gdata){
         MyBot->cardByColor[i] = 0;
     }
 
+    // Count the initial 4 cards dealt to the bot
+    for (int i = 0; i < 4; i++){
+        MyBot->cardByColor[Gdata->cards[i]] += 1;
+    }
+
     // Mark all objectives as incomplete
     for (int i = 0; i < 10; i++){
         MyBot->tab_obj[i].done = 0;
